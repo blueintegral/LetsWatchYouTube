@@ -1,0 +1,668 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!--Facebook Like stuff -->
+<meta property="og:title" content="Let&#039;s Watch YouTube" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://letswatchyoutube.com" />
+<meta property="og:image" content="http://letswatchyoutube.com/fblogo.png" />
+<meta property="og:site_name" content="Let&#039;s Watch YouTube" />
+<meta property="fb:admins" content="1105260025" />
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Let's Watch YouTube!</title>
+
+<noscript><font face=arial>You're gonna need Javascript enabled to use this site. Enable it and then <a href="">try again</a>. </font></noscript>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="jquery-ui-1.8.16.custom.min.js"></script>
+
+<script type="text/javascript" src="http://swfobject.googlecode.com/svn/tags/rc3/swfobject/src/swfobject.js"></script>
+<script type="text/javascript">
+
+//Functionality:
+//Clean up code, seperate into different files
+//move Now Playing text under the currently playing video if they clicked one to skip to
+//Fix random bugs with the gallery. Strange spacing and stuff.
+
+//Future Features:
+//show videos that have already played like grooveshark does with music
+//have a tab that lets you switch between related videos and searching
+//allow scrolling to see videos past only 3
+//Add "load more" to search results? Maybe add a "next page" button to look at more results? Load them dynamically of course.
+//Make text in search box disappear when you click in it
+
+
+//KNOWN BUG: javascript yells at you for the youtube embed because it's not on the same domain or some nonsense. No known fix right now. Not a big deal, just ignore it.
+//KNOWN BUG: javascript is complaining that getPlayerState isn't a thing, when clearly it is. Don't know how to fix it yet.
+//KNWON BUG: sometimes, for no apparent reason, the video that just played won't automatically delete itself
+
+//Changelog:
+//10.6.11: Started changelog. Added more commenting.
+//10.14.11: After a video finishes playing, the preview now disappears and the next video in the queue moves up.
+//12.16.11: Fixed searching to only happen after user is done typing. Fixed search occuring on a null. Removed drag and drop support. Addded behavior to not remove vidoes after they've played, but shift them over like the youtube playlist does. Made previews in queue look clickable.
+//12.17.11: Added ability to delete videos in queue. Still pretty buggy though. Added new background, logo, and default text in search bar. Made everything look a little nicer. Fixed a bunch of bugs.
+//12.18.11: Improved UI on previews. Fixed formatting on the title and view count in search results. Improved logo. Bought domain, set up DNS. Added Like and Tweet buttons. 
+//12.22.11: Fixed a bunch of bugs. Got gallery to behave correctly. Added Now Playing text. Removed depreciated delegate() usage. Modified preview queue and removed scrolling. Added javascript detection. Added brackets around queue.
+
+
+//Functions
+var skipped = 0; 
+
+Array.prototype.move = function (old_index, new_index) {
+    while (old_index < 0) {
+        old_index += this.length;
+    }
+    while (new_index < 0) {
+        new_index += this.length;
+    }
+    if (new_index >= this.length) {
+        var k = new_index - this.length;
+        while ((k--) + 1) {
+            this.push(undefined);
+        }
+    }
+    this.splice(new_index, 0, this.splice(old_index, 1)[0]);
+   // return this; // for testing purposes 
+};
+
+function removeElement(parentDiv, childDiv){
+     if (childDiv == parentDiv) {
+          alert("The parent div cannot be removed.");
+     }
+     else if (document.getElementById(childDiv)) {     
+          var child = document.getElementById(childDiv);
+          var parent = document.getElementById(parentDiv);
+          parent.removeChild(child);
+     }
+     else {
+          alert("Child div has already been removed or does not exist.");
+          return false;
+     }
+}
+
+
+
+//Gallery behavior
+$(window).load(function() { //load the window
+	if (jQuery("#gallery").length) { //if the gallery has a length greater than 0
+        var totalImages = jQuery("#gallery > li").length, // total number of images is the number of things in the gallery
+            visibleImages = Math.round(jQuery("#gallery-wrap").width() / imageWidth), //figures out how many images can fit in the width of the gallery
+            visibleWidth = visibleImages * imageWidth,
+            stopPosition = (visibleWidth - 700);
+        var imageWidth = 163; //was 140, but added 23 because of the close button and frame
+        jQuery("#gallery").width(700); 
+        jQuery("#gallery-prev").click(function() { //when they click the prev button
+            console.log('clicked prev');
+            jQuery("#gallery").animate({
+                left: "+=" + imageWidth + "px" //shift the images to the right
+            });
+            return false;
+        });
+        jQuery("#gallery-next").click(function() { //when they click the next button
+            console.log('clicked next');
+            jQuery("#gallery").animate({
+                left: "-=" + imageWidth + "px" //shift the images to the left
+            });
+            return false;
+        });
+    }
+});
+
+//Set up YouTube embedded IFrame
+var tag = document.createElement('script');
+tag.src = "http://www.youtube.com/player_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+var player;
+console.log('YouTube embed called');
+
+function onPlayerReady(event) {
+if(queue[0]){   
+   event.target.playVideo(); //once the video is loaded, start autoplaying it
+   
+   } 
+   }
+var done = false;
+
+function onPlayerStateChange(event) {
+//What should happen:
+//the video that is currently playing should stay at the front of the queue and have text over it that says "Now Playing"
+//once it finishes, then it gets removed and the next video is shifted in.
+    if (player.getPlayerState() == 0) { //When we detect that the video has ended, remove the 'now playing' preview.
+		
+		if(!skipped){
+		var d = document.getElementById(queue[0]);
+		var toRemove = ("#"+queue[0]);
+		console.log("You just watched video ID " + queue[0]);
+		var cnt = $("#"+queue[0]).contents()
+		var empty = "";
+		
+		
+		$("#"+queue[0] + ".previews").remove(); //remove preview of video we just saw
+        $("#"+queue[0] + ".closepreview").remove(); //remove preview of video we just saw
+		$("#"+queue[0] + ".closepreview2").remove(); //remove preview of video we just saw
+
+		
+		queue.shift(); //pop video just played off the queue (eventually this will actually move it to a history queue or something so you can see what you've watched) 
+		$("#gallery").animate({left: "-=18px"}); //shift previews in queue to the left
+
+		if(queue[0]){
+        cueVideo(queue[0]); //Load the video that's next in line
+        //old_queue.push(queue[0]); //move now playing video to history queue
+        //queue.slice(0, 0); //Remove currently playing video from queue
+        playVideo();
+        //('div').remove(queue[0]);
+		//element = document.getElementById(queue[0]);
+		//element.parentNode.removeChild(element);
+		//$("li#" + queue[0]).remove(); //#
+		console.log('removed last played from queue');
+		console.log(queue[0]);
+        console.log(queue[1]);
+        console.log(queue[2]);
+		} else {
+		skipped = 0;
+		}
+	}
+	}
+	
+	
+
+	//if(player.getPlayerState() == 1){
+		//$(".nowplaying").css({opacity: 0.0, visibility: "visible"}).animate({opacity: 1.0}); //show the Now Playing text when the video starts playing
+		//	$(".nowplaying").css("visibility", "visible");
+		//	console.log("visible");
+	//}
+
+	
+		
+	}
+
+function stopVideo() {
+    player.stopVideo();
+}
+
+function cueVideo(videoID) {
+    player.cueVideoById(videoID);
+}
+
+function playVideo() {
+    player.playVideo();
+}
+
+function videoStatus() {
+    player.getPlayerState();
+}
+
+function onYouTubePlayerAPIReady() {
+    player = new YT.Player('player', {
+        height: 360,
+        width: '640',
+        videoId: '',
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+        //"events" are the listeners we're subscribing to
+    });
+    console.log('YouTube Embed is done calling');
+}
+
+var queue = []; //Define a global, empty array that will hold the playlist.
+
+//Behavior for AJAXing in search results
+$(document).ready(function() {
+    $(".search_input").focus();
+    
+	//Make sure the user finishes typing before we start searching
+	var typingTimer;                //timer identifier
+	var doneTypingInterval = 300;  //time in ms to delay
+	//on keyup, start the countdown
+	$('.search_input').keyup(function(){
+		clearTimeout(typingTimer);
+
+    if ($('search_input').val) {
+        typingTimer = setTimeout(doneTyping, doneTypingInterval);
+    }
+});
+
+//user is "finished typing," do something
+function doneTyping () {	
+	
+        var search_input = $('.search_input').val();
+        var keyword = encodeURIComponent(search_input); //Sanitize input
+        if(keyword){ 
+		//Submit the search request to YouTube and get back a JSON with 10 results
+        var yt_url = 'http://gdata.youtube.com/feeds/api/videos?q=' + keyword + '&format=5&max-results=10&v=2&alt=jsonc';
+        $.ajax({
+            type: "GET",
+            url: yt_url,
+            dataType: "jsonp",
+            //GET the JSON that has search results
+            success: function(response)
+            {
+                if (response.data.items)
+                {
+                    $("#searchresults").html(""); //Remove previously rendered results
+                    $.each(response.data.items, function(i, data) //Iterate through results
+                    {
+                        var video_id = data.id; //scrape the video ID
+                        var video_title = data.title; //scrape the title
+                        var video_viewCount = data.viewCount; //scrape the view count
+                        video_thumb = data.thumbnail.sqDefault; //scrape the video preview standard quality thumbnail image
+                        //Set up the embedded previews with the video title and views to be rendered as instant search results
+                        var search_results = "<div id='" + video_id + "' title='" + video_id + "'><p style=\"position: relative; float:left; clear:left; \"><img src='" + video_thumb + "'/></p><p style=\" float:left; width:250px; height:40px; \"> &nbsp"+video_title + "<br /><br />&nbsp" + video_viewCount + " views</p></div>"; 
+							
+					   $("#searchresults").append(search_results);
+                    });
+                }
+                else {
+                    $("#result").html("<div id='no'>No Video</div>");
+                }
+            }
+        });
+    };
+}
+
+//Let user delete videos from queue by clicking the x button
+$(".closepreview").live("click", function(){
+	var delete_id = this.id; //this is the video we're going to delete
+		console.log("deleting " + this.id); 
+	var k = 0;
+	var position = 0;
+	var vid_id = 0; 
+	
+	position = jQuery.inArray(delete_id, queue);
+	console.log(position);
+	if(position >= 0){ //if it hasn't been played yet
+		queue.splice(position, 1);//remove it from queue
+		console.log("#"+delete_id);
+		$("#"+delete_id + ".previews").remove();//remove preview
+		$("#"+delete_id + ".closepreview").remove(); //remove border from preview
+		$("#"+delete_id + ".closepreview2").remove(); //remove border from preview
+		//$("#gallery").animate({left: "-=140px"}); //shift everything to the left to fill hole
+	} else { //if it's already been played, it's not in the queue anymore
+		//remove preview
+		//shift everything to the right to fill hole
+	}
+if((queue.length-3) <= 0){
+$(".more").html("");
+}
+	
+	});
+		
+//Let user skip to a video in the queue by clicking on the preview
+
+
+$(".previews").live("click", function(){
+	var newfront = this.id;
+	
+	
+	if(newfront == queue[0]){ //if they click the first video in the previews
+	if(player.getPlayerState() == 1){ //and if the video is playing
+	//show the now playing text under the right video
+		$(".nowplaying").css({opacity: 0.0, visibility: "visible"}).animate({opacity: 1.0}); 
+		$(".nowplaying2").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		$(".nowplaying3").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		}
+	}
+	
+	if(newfront == queue[1]){ //if they click the second video in the previews
+	if(player.getPlayerState() == 1){
+		$(".nowplaying").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		$(".nowplaying2").css({opacity: 0.0, visibility: "visible"}).animate({opacity: 1.0}); 
+		$(".nowplaying3").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		}
+	}
+	
+	if(newfront == queue[2]){ //if they click the third video in the previews
+	if(player.getPlayerState() == 1){
+		$(".nowplaying").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		$(".nowplaying2").css({opacity: 0.0, visibility: "hidden"}).animate({opacity: 1.0}); 
+		$(".nowplaying3").css({opacity: 0.0, visibility: "visible"}).animate({opacity: 1.0}); 
+		}
+	}
+	  
+	
+	
+	
+	
+	
+	
+	
+	queue.splice(0,0,newfront); //move video they just clicked to the front of the queue
+	console.log("new queue");
+	console.log(queue[0]);
+	console.log(queue[1]);
+	console.log(queue[2]);
+	console.log(queue[3]);
+
+	
+	
+		
+		
+	
+	//if(newfront == queue[1]){
+	//console.log("2nd");
+	//$(".nowplaying").html("");
+	//$(".nowplaying").html("&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Now Playing"); 
+//	}
+
+	
+	//if(newfront == queue[2]){
+	//console.log("2nd");
+	//$(".nowplaying").html("");
+	//$(".nowplaying").html("&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Now Playing"); 
+	//}
+	
+//	if(newfront == queue[3]){
+//	console.log("3rd");
+//	$(".nowplaying").html("&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp Now Playing"); 
+	//}
+	
+	
+	
+	skipped = 1;
+	cueVideo(this.id);
+	playVideo();
+});
+		
+		$("#searchresults").on("click", "div", function() { //if they click one of the search results
+    $("#result").html(""); //Remove previous results
+    //Keep track of the queue position. 
+    vid = this.id;
+    queue.push(vid); //Push video just clicked to playlist array
+    console.log(queue[0]);
+    console.log(queue[1]);
+    console.log(queue[2]);
+    var preview = "<div style=\"position: relative;\"><ul><li class='spacer' style=\"list-style:none;\"><img class='previews' id='" + vid + "' src='http://i.ytimg.com/vi/" + vid + "/default.jpg' style=\"position: relative; top: 0; left:-40px; z-index:1;\"/><img class='closepreview' id='" + vid + "' src='delete2.png' style=\"position: relative; top: 0px; left: -40px; z-index:2;\"/><img class='closepreview2' id='" + vid + "' src='frame.png' style=\"position: relative; top: 0px; left: -200px; z-index:2;\"/></li></ul> </div>"; 
+
+	var unseen = queue.length-3; 
+	console.log(unseen);
+   var more = "+" + unseen + " more";
+   if(unseen <= 0){
+   $(".more").html("");
+   }
+   
+	if(unseen > 0){
+	$(".more").append(more);
+ }
+ 
+    $("#gallery").append(preview); //This line toggles the currently playing video to appear in the visual queue.
+	//queue = $("#gallery").sortable('toArray');
+    $(".previews").css('cursor', 'pointer'); //Change cursor to arrows, so it looks moveable
+	$(".closepreview").css('cursor', 'pointer');
+	$(".closepreview2").css('cursor', 'pointer');
+	
+	
+    if ((queue.length == 1)) { //If this is the first video they clicked on, handle it seperatly.
+        cueVideo(vid);
+        playVideo();
+   }
+});
+		
+		$("#searchresults").css('cursor', 'pointer'); //Change cursor to finger, so it looks clickable
+
+		
+	
+}); //end of document.ready
+
+
+//Here, add click() detection for deleting a video from the queue
+$(".closepreview").css('cursor', 'pointer'); //Change cursor to finger over close button
+$(".closepreview2").css('cursor', 'pointer'); //Change cursor to finger over close button
+
+
+
+function clearText(a){if(a.defaultValue==a.value){a.value=""}else{if(a.value==""){a.value=a.defaultValue}}};		
+
+
+	
+</script>
+<style>
+
+body {
+  background-image:url('fuzz.gif');
+background-repeat:repeat;
+font-family:'Georgia', Times New Roman, Times, serif
+}
+
+
+
+.custom ul.spacer {
+list-style: none;
+}
+
+.mask{
+   position: relative;
+   overflow: visible; /* was hidden */
+   margin: 0px auto;
+   width: 100%;
+}
+
+.header{
+   float: left;
+   width: 100%;
+}
+
+
+.colleft{
+   position: relative;
+   width: 100%;
+   right: 34%;
+
+
+}
+.col1{
+   position: relative;
+   overflow: visible; /* was hidden */
+   float: left;
+   width: 32%;
+   left: 101%;
+
+
+}
+.col2{
+   position: relative;
+   overflow: visible; /* was hidden */
+   float: left;
+   width: 64%;
+   left: 3%;
+}
+
+
+.footer{
+   float: left;
+   width: 100%;
+}
+
+
+.search_input
+{
+
+border:2px solid #333;
+font-size:20px;
+padding:5px;
+width:350px;
+font-family:'Georgia', Times New Roman, Times, serif;
+-moz-border-radius:5px;-webkit-border-radius:5px;
+background-color:white;
+
+
+}
+#input_box
+{
+text-align:left;
+width:640px;
+}
+#result
+{
+
+margin-top:25px;
+min-height:400px;
+width:640px;
+border:solid 10px #ffffff;
+
+-moz-border-radius:9px;
+-webkit-border-radius:9px;
+
+}
+#no
+{
+padding:30px;
+font-size:24px;
+color:#fff;
+
+
+}
+
+#title
+{
+font-size:26px;
+text-align:left;
+padding-bottom:8px;
+
+}
+#count
+{
+
+
+text-align:left;
+padding-top:8px;
+}
+
+#gallery-wrap{margin: 0 auto; overflow: hidden; height: 100px; width: 650px; position: relative; float: left; 
+}
+#gallery{position: relative; left: 0; top: 0; float: left;
+
+
+}
+#gallery li{float: left; margin: 0 20px 15px 0;}
+#gallery li a img{border: 4px solid #40331b; height: 175px; width: 60px; float: left;
+}
+
+#gallery-controls{margin: 0 auto; width: 732px; float: left; 
+}
+#gallery-prev{float: left;
+}
+#gallery-next{float: right;
+}
+
+.about{ position:relative; font-size:14px; }
+
+.credit{  font-size:14px; float:right; }
+.twitter-share-button{ top:15;}
+ 
+.nowplaying {
+    position: absolute;
+    top: 500;
+    left: 95px;
+    max-width: 100px;
+	visibility: visible;
+}
+.nowplaying2 {
+    position: absolute;
+    top: 500;
+    left: 280px;
+    max-width: 100px;
+	visibility: hidden;
+}
+.nowplaying3 {
+    position: absolute;
+    top: 500;
+    left: 460px;
+    max-width: 100px;
+	visibility: hidden;
+}
+
+
+
+ 
+ 
+</style>
+</head>
+
+<body>
+<!-- Facebook Like button -->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=287057641306469";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+<h3><img src="logo3.png"/><div class="credit">A project by <a target="_blank" href="http://hscott.net">Hunter Scott</a><br /> A solution to <a target="_blank"  href="http://xkcd.com/920/">this</a> problem.</div>
+&nbsp&nbsp&nbsp&nbsp
+<!--facebook like button -->
+<div class="fb-like" data-href="http://letswatchyoutube.com" data-send="false" data-layout="box_count" data-width="0" data-show-faces="false" data-colorscheme="dark" style="position: relative; top: -4px;"></div>
+
+<!--tweet button -->
+<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://letswatchyoutube.com" data-via="hunterscott" data-lang="en" data-count="vertical">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+</h3>
+<hr>
+<div class="mask">
+    <div class="header">
+       <!-- header text -->
+	   
+	   
+	   
+	   
+    </div>
+    <div class="colleft">
+        <div class="col1">
+            <input type="text" class='search_input' value="Start typing to search" /><br/>
+			<div id="searchresults"> 
+			
+			</div>
+        </div>
+        <div class="col2">
+           <div id="player"> 
+		  <!--<img src="blankplayer.png"/> -->
+
+</div>
+ <!-- was here -->
+ 
+
+<!-- preview -->
+		<div style="font-size:95px; float:left;">[</div> 
+		<div style="font-size:95px; position:absolute; margin-left:610px;">]</div>  
+
+
+            <div id="gallery-wrap">  
+                <ul id="gallery" /> 
+                   <!--video previews in the queue go here --> 
+                </ul> 
+            </div>  
+							  <br /><br /><br /><div class="more" style="margin-left:560px;"> </div>  
+
+							 <br /><br /><br /> <div class="nowplaying"> </div> 
+												<div class="nowplaying2">  </div>
+												<div class="nowplaying3"> </div> 
+
+        <!--    
+			<div id="gallery-controls"> 
+            	<a href="javascript:void(0)" id="gallery-prev"><img src="prev.png" alt="" /></a>
+				<div class="nowplaying" style="margin-left:100px;"> Now Playing </div>
+ <a href="javascript:void(0)" id="gallery-next"><img src="next.png" alt="" /></a> 
+            </div> 
+ -->
+
+<!-- preview -->
+        </div> 
+    </div> 
+	
+	
+    <div class="footer">
+	<br /> <br /> <br />
+       <center> <font size="2"> © 2012, <a href="http://hscott.net/resume">Hunter Scott </a></font></center>
+    </div>
+</div>
+
+</body>
+</html>

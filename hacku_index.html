@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!--Facebook Like stuff -->
+<meta property="og:title" content="Let&#039;s Watch YouTube" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="http://letswatchyoutube.com" />
+<meta property="og:image" content="http://letswatchyoutube.com/fblogo.png" />
+<meta property="og:site_name" content="Let&#039;s Watch YouTube" />
+<meta property="fb:admins" content="1105260025" />
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Let's Watch YouTube!</title>
+
+<noscript><font face=arial>You're gonna need Javascript enabled to use this site. Enable it and then <a href="">try again</a>. </font></noscript>
+
+<link type="text/css" href="css/ui-lightness/jquery-ui-1.8.18.custom.css" rel="stylesheet" />	
+		<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.18.custom.min.js"></script>
+
+
+<script type="text/javascript" src="http://swfobject.googlecode.com/svn/tags/rc3/swfobject/src/swfobject.js"></script>
+<script type="text/javascript">
+Array.prototype.move=function(a,b){for(;0>a;)a+=this.length;for(;0>b;)b+=this.length;if(b>=this.length)for(var c=b-this.length;c--+1;)this.push(void 0);this.splice(b,0,this.splice(a,1)[0])};function removeElement(a,b){if(b==a)alert("The parent div cannot be removed.");else if(document.getElementById(b)){var c=document.getElementById(b);document.getElementById(a).removeChild(c)}else return alert("Child div has already been removed or does not exist."),!1}
+$(window).load(function(){if(jQuery("#gallery").length){jQuery("#gallery > li");Math.round(jQuery("#gallery-wrap").width()/a);var a=163;jQuery("#gallery").width(700);jQuery("#gallery-prev").click(function(){jQuery("#gallery").animate({left:"+="+a+"px"});return!1});jQuery("#gallery-next").click(function(){jQuery("#gallery").animate({left:"-="+a+"px"});return!1})}});var tag=document.createElement("script");tag.src="http://www.youtube.com/player_api";var firstScriptTag=document.getElementsByTagName("script")[0];
+firstScriptTag.parentNode.insertBefore(tag,firstScriptTag);var player;function onPlayerReady(a){queue[0]&&a.target.playVideo()}var done=!1;function onPlayerStateChange(){0==player.getPlayerState()&&!skipped&&(document.getElementById(queue[0]),$("#"+queue[0]).contents(),$("#"+queue[0]+".previews").remove(),$("#"+queue[0]+".closepreview").remove(),$("#"+queue[0]+".closepreview2").remove(),queue.shift(),$("#gallery").animate({left:"-=18px"}),queue[0]?(cueVideo(queue[0]),playVideo()):skipped=0)}
+function stopVideo(){player.stopVideo()}function cueVideo(a){player.cueVideoById(a)}function playVideo(){player.playVideo()}function videoStatus(){player.getPlayerState()}function onYouTubePlayerAPIReady(){player=new YT.Player("player",{height:360,width:"640",videoId:"",events:{onReady:onPlayerReady,onStateChange:onPlayerStateChange}})}var queue=[];
+$(document).ready(function(){function a(){var a=$(".search_input").val();(a=encodeURIComponent(a))&&$.ajax({type:"GET",url:"http://gdata.youtube.com/feeds/api/videos?q="+a+"&format=5&max-results=5&v=2&alt=jsonc",dataType:"jsonp",success:function(a){a.data.items?($("#searchresults").html(""),$.each(a.data.items,function(a,c){var b=c.id,e=c.title,f=c.viewCount;video_thumb=c.thumbnail.sqDefault;$("#searchresults").append("<div id='"+b+"' title='"+b+"'><p style=\"position: relative; float:left; clear:left; \"><img src='"+
+video_thumb+'\'/></p><p style=" float:left; width:250px; height:40px; "><b> &nbsp'+e+"</b><br />&nbsp"+f+" views</p></div>")})):$("#result").html("<div id='no'>No Video</div>")}})}$(".search_input").focus();var b;$(".search_input").keyup(function(){clearTimeout(b);$("search_input").val&&(b=setTimeout(a,300))});$(".closepreview").live("click",function(){var a=this.id,b=0,b=queue.length-3,b=b-1,d="+"+b+" more";0>=b&&$(".more").html("");0<b&&($(".more").html(""),$(".more").append(d));b=jQuery.inArray(a,
+queue);0<=b&&(queue.splice(b,1),$("#"+a+".closepreview2").remove(),$("#"+a+".previews").remove(),$("#"+a+".closepreview").remove(),$("#"+queue[2]+"").animate({left:"-=140px"}),$("#"+queue[3]+"").animate({left:"-=140px"}));0>=queue.length-3&&$(".more").html("")});$(".previews").live("click",function(){var a=this.id;a==queue[0]&&1==player.getPlayerState()&&($(".nowplaying").css({opacity:0,visibility:"visible"}).animate({opacity:1}),$(".nowplaying2").css({opacity:0,visibility:"hidden"}).animate({opacity:1}),
+$(".nowplaying3").css({opacity:0,visibility:"hidden"}).animate({opacity:1}));a==queue[1]&&1==player.getPlayerState()&&($(".nowplaying").css({opacity:0,visibility:"hidden"}).animate({opacity:1}),$(".nowplaying2").css({opacity:0,visibility:"visible"}).animate({opacity:1}),$(".nowplaying3").css({opacity:0,visibility:"hidden"}).animate({opacity:1}));a==queue[2]&&1==player.getPlayerState()&&($(".nowplaying").css({opacity:0,visibility:"hidden"}).animate({opacity:1}),$(".nowplaying2").css({opacity:0,visibility:"hidden"}).animate({opacity:1}),
+$(".nowplaying3").css({opacity:0,visibility:"visible"}).animate({opacity:1}));queue.splice(0,0,a);skipped=1;cueVideo(this.id);playVideo()});$("#searchresults").on("click","div",function(){$("#result").html("");vid=this.id;queue.push(vid);var a="<div style=\"position: relative;\"><ul><li class='spacer' style=\"list-style:none;\"><img class='previews' id='"+vid+"' src='http://i.ytimg.com/vi/"+vid+"/default.jpg' style=\"position: relative; top: 0; left:-40px; z-index:1;\"/><img class='closepreview' id='"+
+vid+"' src='delete2.png' style=\"position: relative; top: 0px; left: -40px; z-index:2;\"/><img class='closepreview2' id='"+vid+"' src='frame.png' style=\"position: relative; top: 0px; left: -200px; z-index:2;\"/></li></ul> </div>",b=queue.length-3,d="+"+b+" more";0>=b&&$(".more").html("");0<b&&($(".more").html(""),$(".more").append(d));$("#gallery").append(a);$(".previews").css("cursor","pointer");$(".closepreview").css("cursor","pointer");$(".closepreview2").css("cursor","pointer");1==queue.length&&
+(cueVideo(vid),playVideo())});$("#searchresults").css("cursor","pointer")});$(".closepreview").css("cursor","pointer");$(".closepreview2").css("cursor","pointer");function clearText(a){a.defaultValue==a.value?a.value="":""==a.value&&(a.value=a.defaultValue)};
+</script>
+<style>
+body{background-image:url('fuzz.gif');background-repeat:repeat;font-family:'Georgia', Times New Roman, Times, serif;}.custom ul.spacer{list-style:none;}.mask{position:relative;overflow:visible;width:100%;margin:0 auto;}.colleft{position:relative;width:100%;right:34%;}.col1{position:relative;overflow:visible;float:left;width:32%;left:101%;}.col2{position:relative;overflow:visible;float:left;width:64%;left:3%;}.search_input{border:2px solid #333;font-size:20px;width:350px;font-family:'Georgia', Times New Roman, Times, serif;-moz-border-radius:5px;-webkit-border-radius:5px;background-color:#FFF;padding:5px;}#input_box{text-align:left;width:640px;}#result{margin-top:25px;min-height:400px;width:640px;border:solid 10px #fff;-moz-border-radius:9px;-webkit-border-radius:9px;}#no{font-size:24px;color:#fff;padding:30px;}#title{font-size:26px;text-align:left;padding-bottom:8px;}#count{text-align:left;padding-top:8px;}#gallery-wrap{overflow:hidden;height:100px;width:650px;position:relative;float:left;margin:0 auto;}#gallery{position:relative;left:0;top:0;float:left;}#gallery li{float:left;margin:0 20px 15px 0;}#gallery li a img{border:4px solid #40331b;height:175px;width:60px;float:left;}#gallery-controls{width:732px;float:left;margin:0 auto;}#gallery-prev{float:left;}#gallery-next{float:right;}.about{position:relative;font-size:14px;}.credit{font-size:14px;float:right;}.twitter-share-button{top:15px;}.nowplaying{position:absolute;top:500px;left:95px;max-width:100px;visibility:visible;}.nowplaying2{position:absolute;top:500px;left:280px;max-width:100px;visibility:hidden;}.nowplaying3{position:absolute;top:500px;left:460px;max-width:100px;visibility:hidden;}.header,.footer{float:left;width:100%;}
+</style>
+</head>
+
+<body>
+<!-- Facebook Like button -->
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=287057641306469";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+<h3><img src="logo3.png"/><div class="credit">A project by <a target="_blank" href="http://hscott.net">Hunter Scott</a><br /> A solution to <a target="_blank"  href="http://xkcd.com/920/">this</a> problem.</div>
+&nbsp&nbsp&nbsp&nbsp
+<!--facebook like button -->
+<div class="fb-like" data-href="http://letswatchyoutube.com" data-send="false" data-layout="box_count" data-width="0" data-show-faces="false" data-colorscheme="dark" style="position: relative; top: -4px;"></div>
+
+<!--tweet button -->
+<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://letswatchyoutube.com" data-via="hunterscott" data-lang="en" data-count="vertical">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+</h3>
+<hr>
+<div class="mask">
+    <div class="header">
+	</div>
+    <div class="colleft">
+        <div class="col1">
+            <input type="text" class='search_input' value="Start typing to search" /><br/>
+			<div id="searchresults"> 	
+			</div>
+        </div>
+        <div class="col2">
+           <div id="player"> 
+</div>
+		<div style="font-size:95px; float:left;">[</div> 
+		<div style="font-size:95px; position:absolute; margin-left:610px;">]</div>  
+            <div id="gallery-wrap">  
+                <ul id="gallery" />               
+                </ul> 
+            </div>  
+							  <br /><br /><br /><div class="more" style="margin-left:560px;"> </div>  
+							 <br /><br /><br /> <div class="nowplaying"> </div> 
+												<div class="nowplaying2">  </div>
+												<div class="nowplaying3"> </div> 
+        </div> 
+    </div> 
+    <div class="footer">
+	<br /> <br /> <br />
+       <center> <font size="2"> © 2012, <a href="http://hscott.net/resume">Hunter Scott </a></font></center>
+    </div>
+</div>
+
+
+
+
+
+
+</body>
+</html>
